@@ -49,7 +49,7 @@ class InfraStack(Stack):
         step_queue.grant_send_messages(control_plane_function)
         step_queue.grant_send_messages(worker_function)
 
-        #         # DynamoDB Table
+        # DynamoDB Table
 
         table = dynamodb.TableV2(
             self,
