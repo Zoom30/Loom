@@ -3,8 +3,7 @@
 > A small, self-hosted durable execution engine built on AWS serverless primitives.
 > Define a workflow as a sequence of idempotent steps; Loom runs it to completion
 > across crashes, retries, and multi-hour sleeps - without losing progress.
->
-> *`loom` is a placeholder codename; rename to taste.*
+
 
 
 ---
