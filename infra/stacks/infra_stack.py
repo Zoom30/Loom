@@ -1,5 +1,6 @@
 from aws_cdk import (
     CfnOutput,
+    RemovalPolicy,
     Stack,
     aws_sqs as sqs,
     aws_lambda as _lambda,
@@ -12,6 +13,7 @@ from aws_cdk import (
 from constructs import Construct
 
 from infra.utilities.utils import CODE_EXCLUDES
+from aws_cdk import Tags
 
 
 class InfraStack(Stack):
@@ -46,6 +48,7 @@ class InfraStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_13,
             handler="src.handlers.worker_handler.handler",
             code=_lambda.Code.from_asset(path=".", exclude=CODE_EXCLUDES),
+            environment={"STEP_QUEUE_URL": step_queue.queue_url},
         )
         worker_function.add_event_source(event_sources.SqsEventSource(step_queue))
         step_queue.grant_consume_messages(worker_function)
@@ -62,7 +65,16 @@ class InfraStack(Stack):
                 read_capacity=dynamodb.Capacity.fixed(25),
                 write_capacity=dynamodb.Capacity.autoscaled(max_capacity=25),
             ),
-            partition_key={"name": "pk", "type": dynamodb.AttributeType.STRING},
+            partition_key={"name": "PK", "type": dynamodb.AttributeType.STRING},
+            sort_key={"name": "SK", "type": dynamodb.AttributeType.STRING},
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
+        table.add_global_secondary_index(
+            index_name="GSI1",
+            partition_key={"name": "GSI1PK", "type": dynamodb.AttributeType.STRING},
+            sort_key={"name": "GSI1SK", "type": dynamodb.AttributeType.STRING},
+            projection_type=dynamodb.ProjectionType.ALL,
         )
 
         table.grant_write_data(control_plane_function)
@@ -85,3 +97,5 @@ class InfraStack(Stack):
         events.Rule(
             self, "LoomSweeperTick", targets=[sweeper_target], schedule=sweeper_schedule
         )
+
+        Tags.of(self).add("PROJECT", "LOOM")
